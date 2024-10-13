@@ -1,0 +1,59 @@
+-- Services
+local Players = game:GetService("Players")
+
+-- Get the Local Player
+local localPlayer = Players.LocalPlayer
+
+-- Function to create and apply the highlight to a character
+local function applyHighlight(character, teamColor)
+    -- Wait for the character's humanoid to load
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- Create a Highlight instance
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = character
+    highlight.Adornee = character -- Attach it to the character model
+
+    -- Set the Highlight colors using the player's team color
+    highlight.FillColor = teamColor
+    highlight.OutlineColor = teamColor
+
+    -- Make the highlight visible through walls
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+end
+
+-- Function to update the highlight for a specific player
+local function updatePlayerHighlight(player)
+    -- Make sure the player has a character and is on a team
+    if player.Character and player.Team then
+        applyHighlight(player.Character, player.Team.TeamColor.Color)
+    end
+
+    -- Listen for character respawns to reapply the highlight
+    player.CharacterAdded:Connect(function(character)
+        if player.Team then
+            applyHighlight(character, player.Team.TeamColor.Color)
+        end
+    end)
+end
+
+-- Update highlights for all players
+local function setupHighlights()
+    -- Apply highlight for all existing players
+    for _, player in pairs(Players:GetPlayers()) do
+        updatePlayerHighlight(player)
+    end
+
+    -- Listen for new players joining the game
+    Players.PlayerAdded:Connect(updatePlayerHighlight)
+end
+
+-- Main Execution
+setupHighlights()
+
+-- Listen for team changes for the local player (and others)
+localPlayer:GetPropertyChangedSignal("Team"):Connect(function()
+    if localPlayer.Team and localPlayer.Character then
+        applyHighlight(localPlayer.Character, localPlayer.Team.TeamColor.Color)
+    end
+end)
